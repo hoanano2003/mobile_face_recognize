@@ -1,0 +1,145 @@
+<FaceRecognitionWidget>:
+    # Sử dụng BoxLayout chính để chia màn hình theo chiều dọc
+    BoxLayout:
+        orientation: 'vertical'
+
+        # Phần trên: Hiển thị camera (luôn hiển thị, chiếm 70% chiều cao)
+        Image:
+            id: camera_view
+            allow_stretch: True
+            keep_ratio: True
+            size_hint: (1, 0.7) # Chiếm 70% chiều cao màn hình
+            # Khi ở info mode, camera sẽ thu nhỏ và nằm ở góc trên bên trái
+            # Để đơn giản hóa bố cục chung, chúng ta sẽ giữ camera ở vị trí lớn
+            # và chỉ hiển thị panel thông tin lên trên nó.
+            # opacity: 1 # Luôn hiện để thấy quá trình nhận diện
+
+        # Phần dưới: Bảng thông tin chiếm 30% chiều cao phía dưới, chỉ hiện khi in_info_mode
+        BoxLayout:
+            id: info_panel
+            orientation: 'vertical'
+            size_hint: (1, 0.3) # Chiếm 30% chiều cao màn hình
+            padding: dp(15)
+            spacing: dp(8)
+            # Ẩn/hiện toàn bộ info_panel khi không ở chế độ info
+            opacity: 1 if root.in_info_mode else 0
+            disabled: not root.in_info_mode # Vô hiệu hóa tương tác khi ẩn
+
+            canvas.before:
+                Color:
+                    rgba: 1, 1, 1, 0.95 # Nền trắng mờ cho bảng thông tin
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            # Hàng 1: Tên và Điểm thưởng
+            BoxLayout:
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: 'vertical'
+                spacing: dp(5)
+
+                Label:
+                    text: root.display_name if root.display_name else "Chưa nhận diện"
+                    font_size: '22sp'
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    color: 0, 0, 0, 1
+                    halign: 'center'
+                    valign: 'middle'
+                    text_size: self.width, None
+
+                Label:
+                    text: root.reward_info
+                    font_size: '16sp'
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    color: 0, 0, 0, 1
+                    halign: 'center'
+                    valign: 'middle'
+                    text_size: self.width, None
+
+            # Hàng 2: Input tên và nút Xác nhận (dành cho người mới)
+            BoxLayout:
+                size_hint_y: None
+                height: dp(40)
+                spacing: dp(10)
+
+                TextInput:
+                    id: name_input
+                    hint_text: "Nhập tên"
+                    multiline: False
+                    opacity: 1 if root.show_name_input else 0
+                    disabled: not root.show_name_input
+                    size_hint_x: 0.7 if root.show_name_input else 0
+
+                Button:
+                    text: "Xác nhận"
+                    on_release: root.on_confirm()
+                    opacity: 1 if root.show_confirm_button else 0
+                    disabled: not root.show_confirm_button
+                    size_hint_x: 0.3 if root.show_confirm_button else 1
+
+
+            # Hàng 3: Nút Đổi thưởng, Món của tôi, Thêm món mới
+            BoxLayout:
+                size_hint_y: None
+                height: dp(48)
+                spacing: dp(10)
+                opacity: 1 if root.in_info_mode else 0
+
+                Button:
+                    text: "Đổi Thưởng"
+                    on_release: root.on_redeem_reward()
+                    opacity: 1 if root.show_confirm_button and not root.pending_is_new else 0
+                    disabled: not (root.show_confirm_button and not root.pending_is_new)
+
+                Button:
+                    text: "Món của tôi"
+                    on_release: root.on_my_dishes()
+                    disabled: not root.in_info_mode
+
+                Button:
+                    text: "Thêm món mới"
+                    on_release: root.on_add_new_dish()
+                    disabled: not root.in_info_mode
+
+            # Hàng 4: Thông báo đổi thưởng (Redeem Message)
+            Label:
+                text: root.redeem_message
+                font_size: '14sp'
+                color: 1, 0, 0, 1 # Màu đỏ cho thông báo
+                size_hint_y: None
+                height: self.texture_size[1]
+                halign: 'center'
+                valign: 'middle'
+                text_size: self.width, None
+                opacity: 1 if root.redeem_message else 0 # Chỉ hiện khi có tin nhắn
+
+            # Hàng 5: Danh sách món của tôi
+            ScrollView:
+                size_hint_y: 1 # Chiếm phần còn lại của chiều cao available
+                do_scroll_x: False
+                do_scroll_y: True
+                opacity: 1 if root.show_my_dishes else 0 # Chỉ hiện khi được kích hoạt
+
+                Label:
+                    text: root.my_dishes_text
+                    font_size: '14sp'
+                    color: 0, 0, 0, 1
+                    size_hint_y: None
+                    height: self.texture_size[1] # Tự điều chỉnh chiều cao theo nội dung
+                    halign: 'center'
+                    valign: 'top'
+                    text_size: self.width, None
+
+            # Nút Quay lại
+            Button:
+                id: back_button
+                text: "Quay lại"
+                size_hint_y: None
+                height: dp(48)
+                on_release: root.back_to_recognition()
+                # Nút quay lại chỉ hiện khi ở info mode
+                opacity: 1 if root.in_info_mode else 0
+                disabled: not root.in_info_mode
